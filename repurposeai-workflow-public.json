@@ -1,0 +1,605 @@
+{
+  "name": "RepurposeAI",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "RepurposeAI",
+        "formDescription": "Paste your article below and we'll generate LinkedIn, Facebook, and Email Newsletter content for you.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Article Title",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Article Text",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Industry or Niche"
+            },
+            {
+              "fieldLabel": "Target Audience"
+            },
+            {
+              "fieldLabel": "Preferred Tone",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Professional"
+                  },
+                  {
+                    "option": "Casual"
+                  },
+                  {
+                    "option": "Educational"
+                  },
+                  {
+                    "option": "Persuasive"
+                  },
+                  {
+                    "option": "Inspirational"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Key Messages"
+            },
+            {
+              "fieldLabel": "Call to Action"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5728cb43-f178-4d1a-b490-6a5dc3ec5595",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        240,
+        208
+      ],
+      "webhookId": "YOUR_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "articleTitle",
+              "name": "articleTitle",
+              "value": "={{ $json[\"Article Title\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "articleText",
+              "name": "articleText",
+              "value": "={{ $json[\"Article Text\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "industry",
+              "name": "industry",
+              "value": "={{ $json[\"Industry or Niche\"] || \"General\" }}",
+              "type": "string"
+            },
+            {
+              "id": "audience",
+              "name": "audience",
+              "value": "={{ $json[\"Target Audience\"] || \"General audience\" }}",
+              "type": "string"
+            },
+            {
+              "id": "tone",
+              "name": "tone",
+              "value": "={{ $json[\"Preferred Tone\"] || \"Professional\" }}",
+              "type": "string"
+            },
+            {
+              "id": "keyMessages",
+              "name": "keyMessages",
+              "value": "={{ $json[\"Key Messages\"] || \"None specified\" }}",
+              "type": "string"
+            },
+            {
+              "id": "cta",
+              "name": "cta",
+              "value": "={{ $json[\"Call to Action\"] || \"Learn more\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b0109eea-4a47-46c0-be60-8524fc832c7a",
+      "name": "Set Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        464,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "linkedinPrompt",
+              "name": "linkedinPrompt",
+              "value": "=You are a professional content strategist and LinkedIn copywriter.\n\nUsing the article below, write a LinkedIn post that follows these rules:\n- Length: 150 to 300 words\n- Tone: {{ $(\"Set Variables\").item.json.tone }} and insight-driven\n- Open with a compelling hook — a bold statement, surprising fact, or thought-provoking question\n- Highlight 2 to 3 key takeaways relevant to professionals in {{ $(\"Set Variables\").item.json.industry }}\n- Write for this target audience: {{ $(\"Set Variables\").item.json.audience }}\n- Emphasize these key messages if provided: {{ $(\"Set Variables\").item.json.keyMessages }}\n- End with this call to action: {{ $(\"Set Variables\").item.json.cta }}\n- Include 2 to 3 relevant hashtags at the end\n- Do NOT use generic filler phrases like \"In today's world\" or \"In conclusion\"\n- Output only the post text — no labels, no explanations\n\nArticle Title: {{ $(\"Set Variables\").item.json.articleTitle }}\n\nArticle:\n{{ $(\"Set Variables\").item.json.articleText }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ccb7be2f-617a-47b4-8c32-30af71e69bbe",
+      "name": "Build LinkedIn Prompt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        688,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "YOUR_GROQ_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"model\": \"llama-3.3-70b-versatile\", \"max_tokens\": 1024, \"messages\": [{ \"role\": \"user\", \"content\": $(\"Build LinkedIn Prompt\").item.json.linkedinPrompt }] } }}",
+        "options": {}
+      },
+      "id": "9171df4b-ea82-4cfb-a698-3d6796239a51",
+      "name": "Groq — LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        912,
+        208
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_NOTION_CREDENTIAL_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "YOUR_NOTION_DATABASE_ID",
+          "mode": "id"
+        },
+        "title": "={{ $('Set Variables').item.json.articleTitle }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Article Title|title",
+              "title": "={{ $('Set Variables').item.json.articleTitle }}"
+            },
+            {
+              "key": "LinkedIn Post|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $('Groq — LinkedIn').item.json.choices[0].message.content }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Facebook Post|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $('Groq — Facebook').item.json.choices[0].message.content }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Email Newsletter|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "={{ $('Groq — Newsletter').item.json.choices[0].message.content }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            },
+            {
+              "key": "Date Submitted|date",
+              "date": "={{ $now }}"
+            },
+            {
+              "key": "Status|select",
+              "selectValue": "Pending Review"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b402f661-03d8-49b1-b5a8-d8e3212c96c1",
+      "name": "Notion — Create Record",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        2032,
+        512
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "YOUR_NOTION_TOKEN",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "linkedinPost",
+              "name": "linkedinPost",
+              "value": "={{ $('Groq — LinkedIn').item.json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "facebookPrompt",
+              "name": "facebookPrompt",
+              "value": "=You are a social media copywriter who specializes in Facebook content.\n\nUsing the article below, write a Facebook post that follows these rules:\n- Length: 80 to 150 words\n- Tone: Casual, warm, and conversational — write like a person, not a brand\n- Open with a relatable question or observation that hooks the reader immediately\n- Keep sentences short and easy to scan\n- Write for this target audience: {{ $(\"Set Variables\").item.json.audience }}\n- Emphasize these key messages if provided: {{ $(\"Set Variables\").item.json.keyMessages }}\n- End with this call to action: {{ $(\"Set Variables\").item.json.cta }}\n- You may use 1 to 2 relevant emojis if they feel natural\n- Include 1 to 2 hashtags at the end\n- Output only the post text — no labels, no explanations\n\nArticle Title: {{ $(\"Set Variables\").item.json.articleTitle }}\n\nArticle:\n{{ $(\"Set Variables\").item.json.articleText }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "73405ed1-2fe8-436a-88a7-be1fe111775a",
+      "name": "Build Facebook Prompt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1136,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"model\": \"llama-3.3-70b-versatile\", \"max_tokens\": 512, \"messages\": [{ \"role\": \"user\", \"content\": $(\"Build Facebook Prompt\").item.json.facebookPrompt }] } }}",
+        "options": {}
+      },
+      "id": "06ad67ab-5994-43fb-847e-fc39bb657759",
+      "name": "Groq — Facebook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1360,
+        208
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_NOTION_TOKEN",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "linkedinPost",
+              "name": "linkedinPost",
+              "value": "={{ $(\"Groq — LinkedIn\").item.json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "facebookPost",
+              "name": "facebookPost",
+              "value": "={{ $(\"Groq — Facebook\").item.json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "newsletterPrompt",
+              "name": "newsletterPrompt",
+              "value": "=You are an email marketing specialist who writes high-converting newsletters.\n\nUsing the article below, write an email newsletter that follows these rules:\n- Include a subject line at the very top formatted as: Subject: [your subject line here]\n- Length: 200 to 400 words (body only, not counting subject line)\n- Tone: {{ $(\"Set Variables\").item.json.tone }}, warm, and reader-focused\n- Open with a short engaging intro of 2 to 3 sentences that connects the topic to the reader's situation\n- Summarize 3 to 5 key points from the article using short paragraphs or a simple list\n- Write for this target audience: {{ $(\"Set Variables\").item.json.audience }}\n- Emphasize these key messages if provided: {{ $(\"Set Variables\").item.json.keyMessages }}\n- End with a clear and friendly call to action: {{ $(\"Set Variables\").item.json.cta }}\n- Sign off with: \"Warm regards, [Your Name]\"\n- Output only the email content — no labels, no explanations\n\nArticle Title: {{ $(\"Set Variables\").item.json.articleTitle }}\n\nArticle:\n{{ $(\"Set Variables\").item.json.articleText }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7f8cca7c-ce1d-489a-80d9-f562a06b6c2c",
+      "name": "Build Newsletter Prompt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1584,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "llama-3.3-70b-versatile"
+            },
+            {
+              "name": "max_tokens",
+              "value": "={{ 1500 }}"
+            },
+            {
+              "name": "messages[0].role",
+              "value": "user"
+            },
+            {
+              "name": "messages[0].content",
+              "value": "={{ $(\"Build Newsletter Prompt\").item.json.newsletterPrompt }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ab6846f7-ef80-499f-acd8-81aecb9baaef",
+      "name": "Groq — Newsletter",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1808,
+        208
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_NOTION_TOKEN",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "articleTitle",
+              "name": "articleTitle",
+              "value": "={{ $(\"Set Variables\").item.json.articleTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "articleText",
+              "name": "articleText",
+              "value": "={{ $(\"Set Variables\").item.json.articleText }}",
+              "type": "string"
+            },
+            {
+              "id": "linkedin_output",
+              "name": "linkedin_output",
+              "value": "={{ $(\"Groq — LinkedIn\").item.json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "facebook_output",
+              "name": "facebook_output",
+              "value": "={{ $(\"Groq — Facebook\").item.json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "newsletter_output",
+              "name": "newsletter_output",
+              "value": "={{ $(\"Groq — Newsletter\").item.json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "Pending Review",
+              "type": "string"
+            },
+            {
+              "id": "aiModel",
+              "name": "aiModel",
+              "value": "Groq (Llama 3.3 70B)",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1558fc40-00ab-43f9-941d-2f917d4e3f60",
+      "name": "Prepare Notion Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2032,
+        208
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Variables": {
+      "main": [
+        [
+          {
+            "node": "Build LinkedIn Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build LinkedIn Prompt": {
+      "main": [
+        [
+          {
+            "node": "Groq — LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq — LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Build Facebook Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Facebook Prompt": {
+      "main": [
+        [
+          {
+            "node": "Groq — Facebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq — Facebook": {
+      "main": [
+        [
+          {
+            "node": "Build Newsletter Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Newsletter Prompt": {
+      "main": [
+        [
+          {
+            "node": "Groq — Newsletter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq — Newsletter": {
+      "main": [
+        [
+          {
+            "node": "Prepare Notion Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion — Create Record": {
+      "main": [
+        []
+      ]
+    },
+    "Prepare Notion Data": {
+      "main": [
+        [
+          {
+            "node": "Notion — Create Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e8b1793c-c943-4be9-a484-9abc86829b13",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "nodeGroups": [],
+  "id": "axVKTtOXK1IpgbjN",
+  "tags": []
+}

@@ -1,11 +1,11 @@
-**Problem**
+**Problem**:
 Content creators and marketers often spend hours manually rewriting the same article for different platforms, each requiring a unique tone, format, and audience approach. This repetitive process is time-consuming, inconsistent, and difficult to scale.
 
-**Solution**
+**Solution**:
 AI Multi-Agent Content Repurposing System
 I built an AI-powered content repurposing workflow that transforms a single article into multiple platform-specific content assets automatically. Using AI agents and workflow automation, the system generates a LinkedIn post, Facebook post, and email newsletter from one source article, then sends all outputs to Notion for human review and approval before publishing.
 
-**Objective**
+**Objective**:
 One article goes in. Three platform-ready content pieces come out. A human reviews and approves before anything is published.
 
 **Tech Stack**
